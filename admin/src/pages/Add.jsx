@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { assets } from '../assets/assets'
 import axios from 'axios';
 import { backendUrl } from '../App';
+import { toast } from 'react-toastify';
 
 const Add = ({token}) => {
   const [image1, setImage1] = useState(false);
@@ -27,7 +28,7 @@ const Add = ({token}) => {
       // formData.append("price", price);
       formData.append("price", Number(price));
       formData.append("category", category);
-      formData.append("subcategory", subcategory);
+      formData.append("subCategory", subcategory);
       formData.append("bestseller", bestseller);
       formData.append("sizes", JSON.stringify(sizes));
 
@@ -37,10 +38,23 @@ const Add = ({token}) => {
       image4 && formData.append("image4", image4);
 
       const response = await axios.post(backendUrl + '/api/product/add', formData,{headers:{token}});
-
-      console.log(response.data);
-
+      
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setName("");
+        setDescription("");
+        setImage1(false);
+        setImage2(false);
+        setImage3(false);
+        setImage4(false);
+        setPrice("");
+      }else{
+        toast.error(response.data.message);
+      }
+ 
     } catch (error) {
+      console.log(error);
+      toast.error(error.message);
 
     }
 
@@ -103,7 +117,7 @@ const Add = ({token}) => {
 
         <div>
           <p className='mb-2'>Product Price</p>
-          <input onChange={(e) => setPrice(e.target.value)} className='w-full px-3 py-2 sm:w-[120px]' type='number' placeholder='25' required />
+          <input onChange={(e) => setPrice(Number(e.target.value))} className='w-full px-3 py-2 sm:w-[120px]' type='number' placeholder='25' required />
 
         </div>
       </div>
