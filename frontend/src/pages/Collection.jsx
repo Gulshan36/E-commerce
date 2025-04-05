@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { ShopContext } from '../context/ShopContext';
 import { assets } from '../assets/assets';
 import Title from '../components/Title';
-import Productitem from '../components/Productitem';
+import ProductItem from '../components/ProductItem';
 import Newsletter from '../components/Newsletter';
 
 const Collection = () => {
@@ -137,7 +137,7 @@ const Collection = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
           {filterProducts.length > 0 ? (
             filterProducts.map((item, index) => (
-              <Productitem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
+              <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
             ))
           ) : (
             <p className="col-span-4 text-center text-gray-500">No products found.</p>

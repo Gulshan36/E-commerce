@@ -8,13 +8,14 @@ import Contact from './pages/Contact'
 import Cart from './pages/Cart'
 import Login from './pages/Login'
 import PlaceOrder from './pages/PlaceOrder'
-import Order from './pages/Order'
+import Order from './pages/Order';
 import Navbar from './components/Navbar'
 import Product from "./pages/Product"
 import Footer from './components/Footer';
 import SearchBar from './components/SearchBar';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Verify from './pages/Verify';
 
 const App = () => {
   return (
@@ -31,7 +32,9 @@ const App = () => {
         <Route path='/cart' element={<Cart/>} />
         <Route path='/login' element={<Login/>} />
         <Route path='/place-Order' element={<PlaceOrder/>} />
-        <Route path='/Order' element={<Order/>} />
+        <Route path='/Orders' element={<Order/>} />
+        <Route path="/order" element={<Order />} />
+        <Route path="/verify" element={<Verify />} />
       </Routes>
       <Footer/>
 
