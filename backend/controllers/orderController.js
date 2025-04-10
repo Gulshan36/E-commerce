@@ -2,6 +2,8 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 import razorpay from "razorpay";
+import { sendOrderEmail } from "../config/emailService.js";
+
 
 // global variables
 const deliveryCharge = 10;
@@ -30,6 +32,12 @@ const placeOrder = async (req, res) => {
 
     const newOrder = new orderModel(orderData)
     await newOrder.save();
+
+    // Send Email
+    const user = await userModel.findById(userId);
+    if (user?.email) {
+      await sendOrderEmail(user.email, items, amount);
+    }
 
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
     res.json({ success: true, message: "Order Placed Successfully", });
@@ -112,6 +120,15 @@ const verifyStripe = async (req, res) => {
     if (success === "true") {
       await orderModel.findByIdAndUpdate(orderId, { payment: true });
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+       // Get user email and order data
+       const user = await userModel.findById(userId);
+       const order = await orderModel.findById(orderId);
+ 
+       if (user?.email) {
+         await sendOrderEmail(user.email, order.items, order.amount);
+       }
+
       res.json({ success: true, message: "Payment Successful" });
     } else {
       await orderModel.findByIdAndDelete(orderId);
@@ -179,6 +196,17 @@ const verifyRazorpay = async (req, res) => {
     if (orderInfo.status === 'paid') {
       await orderModel.findByIdAndUpdate(orderInfo.receipt, { payment: true })
       await userModel.findByIdAndUpdate(userId, { cartData: {} })
+
+
+      // Get user email and order data
+      const user = await userModel.findById(userId);
+      const order = await orderModel.findById(orderInfo.receipt);
+
+      if (user?.email) {
+        await sendOrderEmail(user.email, order.items, order.amount);
+      }
+
+
       res.json({ success: true, message: "Payment Successful" })
     } else {
       res.json({ success: false, message: "Payment Failed" })
