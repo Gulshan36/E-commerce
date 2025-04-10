@@ -15,8 +15,8 @@ const Contact = () => {
         <img className='w-full md:max-w-[480px]' src={assets.contact_img} alt="Contact Us"/>
         <div className='flex flex-col justify-center items-start gap-6'>
           <p className='font-semibold text-xl text-gray-600'>Our Store</p>
-          <p className='text-gray-500'>54709 Willms Station <br /> Suite 350, Washington, USA</p>
-          <p>Tel: (+91)555-223-524 <br /> E-mail: admin@forever.com</p>
+          <p className='text-gray-500'>845305,Bank Road  <br /> Street 18, Raxaul, Bihar</p>
+          <p>Tel: (+91)9534311604 <br /> E-mail: gulshan@gmail.com</p>
           <p className='font-semibold text-xl text-gray-600'>Careers at Forever</p>
           <p className='text-gray-500'>Learn more about our teams and job openings.</p>
           <button className='border border-black px-8 py-4 text-sm hover:bg-black hover:text-white transition-all duration-500'>Explore Jobs</button>
