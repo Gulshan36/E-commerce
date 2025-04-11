@@ -2,8 +2,11 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 import razorpay from "razorpay";
-// import { sendOrderEmail } from "../config/emailService.js";
 import { sendOrderEmail } from "../config/emailservice.js";
+import { sendInvoiceEmail } from "../config/emailservice.js";
+import { generateInvoice } from "../config/invoiceGenerator.js";
+
+
 
 
 // global variables
@@ -234,32 +237,51 @@ const allOrders = async (req, res) => {
 // User Order Data for Frontend
 const userOrders = async (req, res) => {
   try {
-
     const { userId } = req.body;
-    const orders = await orderModel.find({ userId })
+    const orders = await orderModel.find({ userId });
     res.json({ success: true, orders });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}
+};
 
-// Update order status from Admin panel
 
+
+// User Order Data for Frontend
 const updateStatus = async (req, res) => {
   try {
-
     const { orderId, status } = req.body;
-    await orderModel.findByIdAndUpdate(orderId, { status });
+
+    // Step 1: Update the order status
+    const updatedOrder = await orderModel.findByIdAndUpdate(orderId, { status }, { new: true });
+
+    // Step 2: Check if status is "Delivered"
+    if (status === "Delivered") {
+      // Populate user for email
+      const user = await userModel.findById(updatedOrder.userId);
+      if (!user?.email) {
+        return res.json({ success: false, message: "User email not found" });
+      }
+
+      // Add user details to order (for invoice)
+      updatedOrder.user = { email: user.email };
+
+      // Step 3: Generate invoice PDF
+      const invoiceBuffer = await generateInvoice(updatedOrder);
+
+      // Step 4: Send Invoice Email
+      await sendInvoiceEmail(user.email, invoiceBuffer);
+    }
+
     res.json({ success: true, message: "Status Updated" });
 
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
-
   }
-}
+};
+
 
 
 export { verifyRazorpay, verifyStripe, placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus }

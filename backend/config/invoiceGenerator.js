@@ -1,47 +1,41 @@
 // backend/config/invoiceGenerator.js
-import PDFDocument from 'pdfkit';
-import fs from 'fs';
-import path from 'path';
 
-export const generateInvoicePDF = (user, order) => {
+import PDFDocument from "pdfkit";
+
+const generateInvoice = async (order) => {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument();
-    const filename = `invoice_${order._id}.pdf`;
-    const filePath = path.join('invoices', filename);
+    const buffers = [];
 
-    if (!fs.existsSync('invoices')) fs.mkdirSync('invoices');
-
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-
-    // Header
-    doc.fontSize(22).text('🧾 Invoice', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(14).text(`Customer: ${user.name}`);
-    doc.text(`Email: ${user.email}`);
-    doc.text(`Order ID: ${order._id}`);
-    doc.text(`Date: ${new Date(order.date).toLocaleString()}`);
-    doc.moveDown();
-
-    // Table header
-    doc.fontSize(16).text('Items:', { underline: true });
-    doc.moveDown(0.5);
-
-    order.items.forEach((item, i) => {
-      doc.fontSize(12).text(`${i + 1}. ${item.name} — ₹${item.price} x ${item.quantity}`);
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(buffers);
+      resolve(pdfBuffer);
     });
 
-    doc.moveDown();
-    doc.fontSize(14).text(`Total Amount: ₹${order.amount}`, { bold: true });
-
-    doc.end();
-
-    stream.on('finish', () => {
-      resolve(filePath);
-    });
-
-    stream.on('error', (err) => {
+    doc.on("error", (err) => {
       reject(err);
     });
+
+    // 📄 Start writing invoice
+    doc.fontSize(20).text("Invoice", { align: "center" });
+    doc.moveDown();
+
+    doc.fontSize(12).text(`Order ID: ${order._id}`);
+    doc.text(`Customer Email: ${order.user.email}`);
+    doc.text(`Order Date: ${new Date(order.createdAt).toLocaleString()}`);
+    doc.moveDown();
+
+    doc.text("Products:");
+    order.items.forEach((item, index) => {
+      doc.text(`${index + 1}. ${item.name} x ${item.quantity} = ₹${item.price}`);
+    });
+
+    doc.moveDown();
+    doc.font("Helvetica-Bold").text(`Total: ₹${order.amount}`, { align: "right" });
+
+    doc.end(); // 🚨 IMPORTANT: This finalizes the PDF
   });
 };
+
+export { generateInvoice };
