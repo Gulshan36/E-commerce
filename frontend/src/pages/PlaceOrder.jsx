@@ -3,6 +3,7 @@ import Title from '../components/Title';
 import CartTotal from '../components/CartTotal';
 import { assets } from '../assets/assets';
 import { ShopContext } from '../context/ShopContext';
+import { FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 
 const PlaceOrder = () => {
