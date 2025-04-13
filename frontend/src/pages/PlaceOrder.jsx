@@ -7,8 +7,9 @@ import { FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 
 const PlaceOrder = () => {
-  // State for payment method selection
   const [method, setMethod] = useState('cod');
+  const [loading, setLoading] = useState(false); // 👈 Added loading state
+
   const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext)
 
   const [formData, setFormData] = useState({
@@ -22,7 +23,6 @@ const PlaceOrder = () => {
     country: '',
     phone: ''
   });
-
 
   const onChangeHandler = (event) => {
     const { name, value } = event.target;
@@ -41,29 +41,26 @@ const PlaceOrder = () => {
       description: 'Order Payment',
       order_id: order.id,
       receipt: order.receipt,
-      handler: async  (response) => {
-        console.log(response);
+      handler: async (response) => {
         try {
-          const { data } = await axios.post(backendUrl + '/api/order/verifyRazorpay',response, {headers:{token}})
-          if(data.success) {
+          const { data } = await axios.post(backendUrl + '/api/order/verifyRazorpay', response, { headers: { token } })
+          if (data.success) {
             navigate('/orders');
             setCartItems({});
           }
         } catch (error) {
           console.log(error);
-          toast.error(error);
-      
         }
-        // Handle successful payment here
       },
     }
     const razorpay = new window.Razorpay(options);
     razorpay.open();
   }
 
-
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+    setLoading(true); // 👈 Start loading
+
     try {
       let orderItems = [];
 
@@ -88,54 +85,43 @@ const PlaceOrder = () => {
         amount: getCartAmount() + delivery_fee,
       }
 
-      switch(method) {
-        // API call for COD
+      switch (method) {
         case 'cod':
-          const response = await axios.post(backendUrl + '/api/order/place', orderData,{headers:{token}})
-          if(response.data.success) {
+          const response = await axios.post(backendUrl + '/api/order/place', orderData, { headers: { token } });
+          if (response.data.success) {
             setCartItems({});
             navigate('/orders');
-          }else{
-            toast.error(response.data.message);
           }
           break;
 
-          case 'stripe':
-            const responseStripe = await axios.post(backendUrl + '/api/order/stripe', orderData,{headers:{token}})
-            if(responseStripe.data.success) {
-              const {session_url} = responseStripe.data
-              window.location.replace(session_url);
-            }else{
-              toast.error(responseStripe.data.message);
-            }
-
+        case 'stripe':
+          const responseStripe = await axios.post(backendUrl + '/api/order/stripe', orderData, { headers: { token } });
+          if (responseStripe.data.success) {
+            const { session_url } = responseStripe.data;
+            window.location.replace(session_url);
+          }
           break;
 
-          case 'razorpay':
-            const responseRazorpay = await axios.post(backendUrl + '/api/order/razorpay', orderData,{headers:{token}})
-            if(responseRazorpay.data.success) {
-              if(responseRazorpay.data.order);
-               initPay(responseRazorpay.data.order);
+        case 'razorpay':
+          const responseRazorpay = await axios.post(backendUrl + '/api/order/razorpay', orderData, { headers: { token } });
+          if (responseRazorpay.data.success && responseRazorpay.data.order) {
+            initPay(responseRazorpay.data.order);
+          }
+          break;
 
-            }
-            break;
-
-          default:
-            break;
+        default:
+          break;
       }
-
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
-      
-      
+    } finally {
+      setLoading(false); // 👈 Stop loading
     }
   };
 
-
   return (
     <form onSubmit={onSubmitHandler} className='flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t'>
-      {/* --------- Left side --------- */}
+      {/* Left side */}
       <div className='flex flex-col gap-4 w-full sm:max-w-[480px]'>
         <div className='text-xl sm:text-2xl my-3'>
           <Title text1={'DELIVERY'} text2={'INFORMATION'} />
@@ -157,7 +143,7 @@ const PlaceOrder = () => {
         <input required onChange={onChangeHandler} name='phone' value={formData.phone} className="border border-gray-300 rounded py-1.5 px-3.5 w-full" type="number" placeholder="Phone" />
       </div>
 
-      {/* -------------- Right Side -------------- */}
+      {/* Right Side */}
       <div className='mt-8'>
         <div className='mt-8 min-w-80'>
           <CartTotal />
@@ -166,8 +152,6 @@ const PlaceOrder = () => {
         <div className='mt-12'>
           <Title text1={'PAYMENT'} text2={'METHOD'} />
 
-
-          {/* ------------- Payment Method Selection */}
           <div className="flex flex-col lg:flex-row gap-3">
             <div onClick={() => setMethod('stripe')} className={`flex items-center gap-3 border p-2.5 cursor-pointer ${method === 'stripe' ? 'bg-gray-100' : ''}`}>
               <p className={`w-3.5 h-3.5 border rounded-full shrink-0 ${method === 'stripe' ? 'bg-green-400' : ''}`}></p>
@@ -186,7 +170,14 @@ const PlaceOrder = () => {
           </div>
 
           <div className='w-full text-end mt-8'>
-            <button type='submit' className='bg-black text-white px-16 py-3 text-sm'>PLACE ORDER </button>
+            {loading ? (
+              <button type="button" className='bg-black text-white px-16 py-3 text-sm flex justify-center items-center gap-2'>
+                <FaSpinner className='animate-spin' />
+                Placing Order...
+              </button>
+            ) : (
+              <button type='submit' className='bg-black text-white px-16 py-3 text-sm'>PLACE ORDER</button>
+            )}
           </div>
         </div>
       </div>
