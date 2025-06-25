@@ -3,8 +3,8 @@
 <p>A full-stack E-commerce application built with Node.js, Express, MongoDB, and React. This project provides a robust platform for online shopping, featuring user authentication, product management, and a seamless shopping experience.</p>
 
 <h2>🌐 Live Demo</h2>
+<p>👉 <a href="https://e-commerce-adminpanel-theta.vercel.app/" target="_blank">AdminPanel</a></p>
 <p>👉 <a href="https://e-commerce-frontend-delta-umber.vercel.app/" target="_blank">E-Commerce Website Live</a></p>
-<p>👉 <a href="https://e-commerce-frontend-delta-umber.vercel.app/login" target="_blank">AdminPanel</a></p>
 
 
 <h2>🛠️ Tech Stack</h2>
