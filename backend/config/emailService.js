@@ -1,4 +1,3 @@
-// backend/config/emailservice.js
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
