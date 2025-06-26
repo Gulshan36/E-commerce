@@ -25,7 +25,7 @@ app.use('/api/cart',cartRouter)
 app.use('/api/order',orderRouter)
 
 app.get('/',(req,res)=>{
-    res.send("API working")
+    res.send("API working successfully")
 })
 
 app.listen(port,()=> console.log('Server started on PORT : '+port))
