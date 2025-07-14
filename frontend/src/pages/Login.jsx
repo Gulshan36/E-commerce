@@ -4,23 +4,23 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const Login = () => {
-
   const [currentState, setCurrentState] = useState('Login');
   const { token, setToken, navigate, backendUrl } = useContext(ShopContext);
-
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-
+  const [loading, setLoading] = useState(false);
 
   const onSubmitHander = async (event) => {
     event.preventDefault();
+    setLoading(true);
     try {
       if(currentState === 'Sign Up'){
         const response = await axios.post(backendUrl + '/api/user/register', {name, email, password});
         if(response.data.success){
           setToken(response.data.token);
           localStorage.setItem('token', response.data.token);
+          toast.success('Account created successfully!');
         }else{
           toast.error(response.data.message);
         }
@@ -29,14 +29,7 @@ const Login = () => {
         if(response.data.success){
           setToken(response.data.token);
           localStorage.setItem('token', response.data.token);
-          toast.success('Login successful', {
-            position: "top-right",
-            autoClose: 800, // Duration in milliseconds (2 seconds)
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
+          toast.success('Login successful!');
         }else{
           toast.error(response.data.message);
         }
@@ -44,59 +37,112 @@ const Login = () => {
     } catch (error) {
       console.error(error);
       toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   }
-useEffect(() => {
-  if (token) {
-    setToken(token);
-    navigate('/');
-}
-},[token])
+
+  useEffect(() => {
+    if (token) {
+      navigate('/');
+    }
+  },[token])
 
   return (
-    <form onSubmit={onSubmitHander} className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800">
-      <div className="inline-flex items-center gap-2 mb-2 mt-10">
-        <p className="prata-regular text-3xl">{currentState}</p>
-        <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
-      </div>
-      {/* Show Name field only when signing up */}
-      {currentState === 'Sign Up' && (
-        <input  
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-800 rounded-md"
-          placeholder="Name"
-          required
-        />
-      )}
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-800 rounded-md"
-        placeholder="E-mail"
-        required
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-800 rounded-md"
-        placeholder="Password"
-        required
-      />
-      <div className="w-full flex justify-between text-sm mt-[-8px]">
-        <p className="cursor-pointer text-gray-600 hover:underline">Forgot your Password?</p>
-        {
-          currentState === 'Login'
-            ? (<p onClick={() => setCurrentState('Sign Up')} className="cursor-pointer text-gray-600 hover:underline">Create account</p>)
-            : (<p onClick={() => setCurrentState('Login')} className="cursor-pointer text-gray-600 hover:underline">Login Here</p>)
-        }
-      </div>
-      <button className='bg-black text-white font-light px-8 py-2 mt-4'>{currentState === 'Login' ? 'Sign In' : 'Sign Up'}</button>
+    <div className="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 transform hover:scale-105 transition-transform duration-300">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <h2 className="text-3xl font-bold text-gray-800">{currentState}</h2>
+              <div className="h-[2px] w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+            </div>
+            <p className="text-gray-600">
+              {currentState === 'Login' ? 'Welcome back! Please sign in to your account.' : 'Create a new account to get started.'}
+            </p>
+          </div>
 
-    </form>
+          <form onSubmit={onSubmitHander} className="space-y-6">
+            {currentState === 'Sign Up' && (
+              <div className="animate-fade-in">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <input  
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <button type="button" className="text-blue-600 hover:text-blue-800 transition-colors duration-200">
+                Forgot Password?
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentState(currentState === 'Login' ? 'Sign Up' : 'Login')}
+                className="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+              >
+                {currentState === 'Login' ? 'Create Account' : 'Already have account?'}
+              </button>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {currentState === 'Login' ? 'Signing In...' : 'Creating Account...'}
+                </>
+              ) : (
+                currentState === 'Login' ? 'Sign In' : 'Sign Up'
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 text-sm">
+              By {currentState === 'Login' ? 'signing in' : 'creating an account'}, you agree to our 
+              <a href="#" className="text-blue-600 hover:text-blue-800 ml-1">Terms of Service</a> and 
+              <a href="#" className="text-blue-600 hover:text-blue-800 ml-1">Privacy Policy</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

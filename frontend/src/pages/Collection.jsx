@@ -67,85 +67,139 @@ const Collection = () => {
   }, [category, subCategory, search, showSearch, sortType, products]);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
+    <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
       {/* Filter Options */}
-      <div className="min-w-60">
+      <div className="min-w-60 bg-white rounded-lg shadow-lg p-6 h-fit sticky top-4">
         <p
           onClick={() => setShowFilter(!showFilter)}
-          className="my-2 text-xl flex items-center cursor-pointer gap-2"
+          className="my-2 text-xl flex items-center cursor-pointer gap-2 font-bold text-gray-800 hover:text-blue-600 transition-colors duration-300"
         >
           FILTERS
           <img
-            className={`h-3 sm:hidden ${showFilter ? 'rotate-90' : ''}`}
+            className={`h-3 sm:hidden transform transition-transform duration-300 ${showFilter ? 'rotate-90' : ''}`}
             src={assets.dropdown_icon}
             alt=""
           />
         </p>
 
         {/* Category Filter */}
-        <div className={`border border-gray-300 pl-5 py-3 mt-6 ${showFilter ? '' : 'hidden'} sm:block`}>
-          <p className="mb-3 text-sm font-medium">CATEGORIES</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            <label className="flex gap-2">
-              <input className="w-3" type="checkbox" value="Men" onChange={toggleCategory} />
-              Men
-            </label>
-            <label className="flex gap-2">
-              <input className="w-3" type="checkbox" value="Women" onChange={toggleCategory} />
-              Women
-            </label>
-            <label className="flex gap-2">
-              <input className="w-3" type="checkbox" value="Kids" onChange={toggleCategory} />
-              Kids
-            </label>
+        <div className={`border border-gray-200 rounded-lg pl-5 py-4 mt-6 bg-gradient-to-r from-blue-50 to-purple-50 ${showFilter ? '' : 'hidden'} sm:block transition-all duration-300`}>
+          <p className="mb-4 text-sm font-bold text-gray-800 uppercase tracking-wide">CATEGORIES</p>
+          <div className="flex flex-col gap-3 text-sm font-medium text-gray-700">
+            {['Men', 'Women', 'Kids'].map((cat) => (
+              <label key={cat} className="flex gap-3 items-center cursor-pointer hover:text-blue-600 transition-colors duration-200 group">
+                <input 
+                  className="w-4 h-4 accent-blue-600 cursor-pointer" 
+                  type="checkbox" 
+                  value={cat} 
+                  onChange={toggleCategory} 
+                />
+                <span className="group-hover:scale-105 transition-transform duration-200">{cat}</span>
+              </label>
+            ))}
           </div>
         </div>
 
         {/* SubCategory Filter */}
-        <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} sm:block`}>
-          <p className="mb-3 text-sm font-medium">TYPE</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            <label className="flex gap-2">
-              <input className="w-3" type="checkbox" value="Topwear" onChange={toggleSubCategory} />
-              Topwear
-            </label>
-            <label className="flex gap-2">
-              <input className="w-3" type="checkbox" value="Bottomwear" onChange={toggleSubCategory} />
-              Bottomwear
-            </label>
-            <label className="flex gap-2">
-              <input className="w-3" type="checkbox" value="Winterwear" onChange={toggleSubCategory} />
-              Winterwear
-            </label>
+        <div className={`border border-gray-200 rounded-lg pl-5 py-4 my-5 bg-gradient-to-r from-purple-50 to-pink-50 ${showFilter ? '' : 'hidden'} sm:block transition-all duration-300`}>
+          <p className="mb-4 text-sm font-bold text-gray-800 uppercase tracking-wide">TYPE</p>
+          <div className="flex flex-col gap-3 text-sm font-medium text-gray-700">
+            {['Topwear', 'Bottomwear', 'Winterwear'].map((subCat) => (
+              <label key={subCat} className="flex gap-3 items-center cursor-pointer hover:text-purple-600 transition-colors duration-200 group">
+                <input 
+                  className="w-4 h-4 accent-purple-600 cursor-pointer" 
+                  type="checkbox" 
+                  value={subCat} 
+                  onChange={toggleSubCategory} 
+                />
+                <span className="group-hover:scale-105 transition-transform duration-200">{subCat}</span>
+              </label>
+            ))}
           </div>
         </div>
+
+        {/* Filter Summary */}
+        {(category.length > 0 || subCategory.length > 0) && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm font-semibold text-blue-800 mb-2">Active Filters:</p>
+            <div className="flex flex-wrap gap-2">
+              {[...category, ...subCategory].map((filter, index) => (
+                <span key={index} className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                  {filter}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right Side */}
       <div className="flex-1">
-        <div className="flex justify-between text-base sm:text-2xl mb-4">
+        <div className="flex justify-between items-center text-base sm:text-2xl mb-6 bg-white rounded-lg shadow-sm p-4">
           <Title text1={'ALL'} text2={'COLLECTIONS'} />
           {/* Product Sort */}
-          <select onChange={(e) => setSortType(e.target.value)} className="border-2 border-gray-300 text-sm px-2">
+          <select 
+            onChange={(e) => setSortType(e.target.value)} 
+            className="border-2 border-gray-300 rounded-lg text-sm px-4 py-2 bg-white hover:border-blue-500 focus:border-blue-600 focus:outline-none transition-colors duration-200 cursor-pointer"
+          >
             <option value="relavent">Sort by: Relevant</option>
             <option value="low-high">Sort by: Low to High</option>
             <option value="high-low">Sort by: High to Low</option>
           </select>
         </div>
 
+        {/* Products Count */}
+        <div className="mb-4 text-gray-600 text-sm">
+          Showing {filterProducts.length} products
+        </div>
+
         {/* Display Products */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 gap-y-8">
           {filterProducts.length > 0 ? (
             filterProducts.map((item, index) => (
-              <ProductItem key={index} name={item.name} id={item._id} price={item.price} image={item.image} />
+              <div key={index} className="transform hover:scale-105 transition-transform duration-300">
+                <ProductItem 
+                  name={item.name} 
+                  id={item._id} 
+                  price={item.price} 
+                  image={item.image} 
+                />
+              </div>
             ))
           ) : (
-            <p className="col-span-4 text-center text-gray-500">No products found.</p>
+            <div className="col-span-4 text-center py-20">
+              <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No products found</h3>
+                <p className="text-gray-500 mb-4">Try adjusting your filters or search terms</p>
+                <button 
+                  onClick={() => {
+                    setCategory([]);
+                    setSubCategory([]);
+                    setSortType('relavent');
+                  }}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors duration-200"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Closing Newsletter Component */}
+        {/* Load More Button (if needed) */}
+        {filterProducts.length > 0 && (
+          <div className="text-center mt-12">
+            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300">
+              Load More Products
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
