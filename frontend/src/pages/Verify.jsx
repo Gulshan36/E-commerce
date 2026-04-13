@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useContext } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import axios from 'axios'
@@ -10,26 +10,40 @@ const Verify = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('verifying')
+  const retryTimerRef = useRef(null)
+  const retryCountRef = useRef(0)
+
+  const maxCashfreeRetries = 6
 
   const success = searchParams.get('success')
   const orderId = searchParams.get('orderId')
+  const provider = searchParams.get('provider') || 'stripe'
 
   const verifyPayment = async () => {
     try {
       if (!token) {
-        setStatus('error')
-        setLoading(false)
+        if (!localStorage.getItem('token')) {
+          setStatus('error')
+          setLoading(false)
+        }
         return null
       }
       
       setStatus('verifying')
-      const response = await axios.post(backendUrl + '/api/order/verifyStripe',{ success, orderId }, { headers: { token } });
+      const verifyEndpoint = provider === 'cashfree' ? '/api/order/verifyCashfree' : '/api/order/verifyStripe';
+      const verifyPayload = provider === 'cashfree' ? { orderId } : { success, orderId };
+      const response = await axios.post(backendUrl + verifyEndpoint, verifyPayload, { headers: { token } });
       
       if(response.data.success) {
         setStatus('success')
         setCartItems({})
         setTimeout(() => {
           navigate('/orders')
+        }, 2000)
+      } else if (provider === 'cashfree' && response.data.message === 'Payment Pending' && retryCountRef.current < maxCashfreeRetries) {
+        retryCountRef.current += 1
+        retryTimerRef.current = setTimeout(() => {
+          verifyPayment()
         }, 2000)
       } else {
         setStatus('failed')
@@ -48,7 +62,12 @@ const Verify = () => {
 
   useEffect(() => {
     verifyPayment()
-  }, [token])
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current)
+      }
+    }
+  }, [token, orderId, provider, success])
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">

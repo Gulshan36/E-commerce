@@ -5,18 +5,18 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 
 const Profile = () => {
-  const { token, navigate, backendUrl } = useContext(ShopContext);
+  const { token, navigate, } = useContext(ShopContext);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
     phone: '',
-    profilePicture: '',
+    // profilePicture: '',
     address: {
       street: '',
       city: '',
@@ -32,27 +32,31 @@ const Profile = () => {
     confirmPassword: ''
   });
 
-  // Cloudinary configuration
-  const CLOUDINARY_UPLOAD_PRESET = 'your_upload_preset'; // Replace with your preset
-  const CLOUDINARY_CLOUD_NAME = 'your_cloud_name'; // Replace with your cloud name
-
   // Upload image to Cloudinary
-  const uploadImageToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    
-    try {
-      const response = await axios.post(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        formData
-      );
-      return response.data.secure_url;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw new Error('Failed to upload image');
-    }
-  };
+const uploadImageToCloudinary = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    console.log('Uploading image for email:', profileData.email); // ✅ safe logging
+    const response = await axios.put(
+      `${backendUrl}/api/user/profileUpdate/${profileData.email}`, // ✅ correct usage
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    return response.data.user.image;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw new Error('Failed to upload image');
+  }
+};
+
+
 
   // Handle profile picture upload
   const handleProfilePictureUpload = async (event) => {
@@ -96,7 +100,7 @@ const Profile = () => {
     setDataLoading(true);
     try {
       const response = await axios.get(backendUrl + '/api/user/profile', { 
-        headers: { Authorization: `Bearer ${token}` } // Fixed header format
+        // headers: { Authorization: `Bearer ${token}` } // Fixed header format
       });
       
       if (response.data.success) {
@@ -117,7 +121,7 @@ const Profile = () => {
       } else {
         // Set default values with current user info
         setProfileData({
-          name: 'User',
+          name: '',
           email: localStorage.getItem('userEmail') || '',
           phone: '',
           profilePicture: '',
@@ -131,7 +135,7 @@ const Profile = () => {
         });
       }
     } catch (error) {
-      console.error('Profile load error:', error);
+      // console.error('Profile load error:', error);
       // Handle different error scenarios
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');

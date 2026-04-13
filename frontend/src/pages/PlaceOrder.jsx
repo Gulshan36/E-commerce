@@ -4,10 +4,12 @@ import CartTotal from '../components/CartTotal';
 import { assets } from '../assets/assets';
 import { ShopContext } from '../context/ShopContext';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const PlaceOrder = () => {
   const [method, setMethod] = useState('cod');
   const [loading, setLoading] = useState(false);
+  const cashfreeMode = import.meta.env.VITE_CASHFREE_MODE || 'sandbox';
 
   const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext)
 
@@ -54,6 +56,18 @@ const PlaceOrder = () => {
     }
     const razorpay = new window.Razorpay(options);
     razorpay.open();
+  }
+
+  const initCashfreePay = async (paymentSessionId) => {
+    if (!window.Cashfree) {
+      throw new Error('Cashfree SDK not loaded');
+    }
+
+    const cashfree = window.Cashfree({ mode: cashfreeMode });
+    await cashfree.checkout({
+      paymentSessionId,
+      redirectTarget: '_self',
+    });
   }
 
   const onSubmitHandler = async (event) => {
@@ -108,6 +122,15 @@ const PlaceOrder = () => {
           }
           break;
 
+        case 'cashfree':
+          const responseCashfree = await axios.post(backendUrl + '/api/order/cashfree', orderData, { headers: { token } });
+          if (responseCashfree.data.success && responseCashfree.data.payment_session_id) {
+            await initCashfreePay(responseCashfree.data.payment_session_id);
+          } else {
+            toast.error(responseCashfree.data.message || 'Unable to start Cashfree checkout');
+          }
+          break;
+
         default:
           break;
       }
@@ -121,6 +144,7 @@ const PlaceOrder = () => {
   const paymentMethods = [
     { id: 'stripe', name: 'Stripe', logo: assets.stripe_logo },
     { id: 'razorpay', name: 'Razorpay', logo: assets.razorpay_logo },
+    { id: 'cashfree', name: 'Cashfree', logo: null },
     { id: 'cod', name: 'Cash on Delivery', logo: null }
   ];
 

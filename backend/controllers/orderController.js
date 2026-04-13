@@ -18,6 +18,15 @@ const razorepayInstance = new razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 })
+const cashfreeBaseUrl = process.env.CASHFREE_MODE === "production"
+  ? "https://api.cashfree.com/pg"
+  : "https://sandbox.cashfree.com/pg";
+const cashfreeHeaders = {
+  "x-client-id": process.env.CASHFREE_CLIENT_ID,
+  "x-client-secret": process.env.CASHFREE_CLIENT_SECRET,
+  "x-api-version": process.env.CASHFREE_API_VERSION || "2023-08-01",
+  "Content-Type": "application/json",
+};
 
 
 // Placing Order using COD method
@@ -188,6 +197,123 @@ const placeOrderRazorpay = async (req, res) => {
   }
 }
 
+// Placing Order using Cashfree method
+const placeOrderCashfree = async (req, res) => {
+  try {
+    const { userId, items, amount, address } = req.body;
+    const { origin } = req.headers;
+
+    if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
+      return res.json({ success: false, message: "Cashfree credentials are not configured" });
+    }
+
+    const orderData = {
+      userId,
+      items,
+      address,
+      amount,
+      paymentMethod: "Cashfree",
+      payment: false,
+      date: Date.now(),
+    };
+
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
+
+    const customerName = [address?.firstName, address?.lastName].filter(Boolean).join(" ").trim() || "Customer";
+    const returnUrlBase = origin || process.env.FRONTEND_URL;
+    const cashfreePayload = {
+      order_id: newOrder._id.toString(),
+      order_amount: amount,
+      order_currency: currency.toUpperCase(),
+      customer_details: {
+        customer_id: userId.toString(),
+        customer_name: customerName,
+        customer_email: address?.email || "",
+        customer_phone: address?.phone || "",
+      },
+      order_meta: {
+        return_url: `${returnUrlBase}/verify?provider=cashfree&orderId={order_id}`,
+      },
+    };
+
+    const response = await fetch(`${cashfreeBaseUrl}/orders`, {
+      method: "POST",
+      headers: cashfreeHeaders,
+      body: JSON.stringify(cashfreePayload),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      await orderModel.findByIdAndDelete(newOrder._id);
+      return res.json({
+        success: false,
+        message: responseData?.message || responseData?.error || "Cashfree order creation failed",
+      });
+    }
+
+    res.json({
+      success: true,
+      payment_session_id: responseData.payment_session_id,
+      orderId: newOrder._id.toString(),
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Verify Order using Cashfree method
+const verifyCashfree = async (req, res) => {
+  try {
+    const { orderId, userId } = req.body;
+
+    if (!process.env.CASHFREE_CLIENT_ID || !process.env.CASHFREE_CLIENT_SECRET) {
+      return res.json({ success: false, message: "Cashfree credentials are not configured" });
+    }
+
+    if (!orderId) {
+      return res.json({ success: false, message: "Order ID is required" });
+    }
+
+    const response = await fetch(`${cashfreeBaseUrl}/orders/${orderId}`, {
+      method: "GET",
+      headers: cashfreeHeaders,
+    });
+
+    const orderInfo = await response.json();
+
+    if (!response.ok) {
+      return res.json({ success: false, message: orderInfo?.message || "Unable to verify Cashfree payment" });
+    }
+
+    if (orderInfo.order_status === "PAID") {
+      await orderModel.findByIdAndUpdate(orderId, { payment: true });
+      await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+      const user = await userModel.findById(userId);
+      const order = await orderModel.findById(orderId);
+
+      if (user?.email && order) {
+        await sendOrderEmail(user.email, order.items, order.amount);
+      }
+
+      return res.json({ success: true, message: "Payment Successful" });
+    }
+
+    if (["FAILED", "CANCELLED", "EXPIRED"].includes(orderInfo.order_status)) {
+      await orderModel.findByIdAndDelete(orderId);
+      return res.json({ success: false, message: "Payment Failed" });
+    }
+
+    res.json({ success: false, message: "Payment Pending" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 
 // Verify Order using Razorpay method
 
@@ -284,4 +410,4 @@ const updateStatus = async (req, res) => {
 
 
 
-export { verifyRazorpay, verifyStripe, placeOrder, placeOrderStripe, placeOrderRazorpay, allOrders, userOrders, updateStatus }
+export { verifyRazorpay, verifyStripe, verifyCashfree, placeOrder, placeOrderStripe, placeOrderRazorpay, placeOrderCashfree, allOrders, userOrders, updateStatus }
